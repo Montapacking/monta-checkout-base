@@ -1,0 +1,272 @@
+<?php foreach ($this->getStylesheetPaths() as $sCssSheetPath) { ?>
+    <link rel="stylesheet" href="<?= $sCssSheetPath ?>" type="text/css"/>
+<? } ?>
+
+<?php foreach ($this->getJavaScriptPaths() as $sJavaScriptPath) { ?>
+    <script type="text/javascript" language="javascript" src="<?= $sJavaScriptPath ?>"></script>
+<? } ?>
+
+<input type="hidden" name="current_longitude" id="current_longitude" value="<?php echo $oItem->getAddress()->longitude ?>">
+<input type="hidden" name="current_latitude" id="current_latitude" value="<?php echo $oItem->getAddress()->latitude ?>">
+
+<div id="contentblock">
+
+    <div id="deliveryblock" class="marginbottom">
+
+        <div class="deliverycontainer">
+
+            <div class="logocontainer"></div>
+
+            <div class="textcontainer">
+
+                <span class="datetimetext">Uw order wordt bezorgd met <strong class="shipper"></strong> op <strong class="date"></strong></span>
+                <span class="timetext">&nbsp;tussen <strong class="datetime"></strong></span>
+
+                <br>
+
+                <a href="javascript:;" id="othersendmethod">Klik hier om een andere bezorgoptie te kiezen</a>
+
+            </div>
+
+        </div>
+
+
+        <div id='cssmenu' style="display:none">
+            <ul>
+
+                <?php
+                $firstoption_found = false;
+                foreach ($oItem->refreshShippingOptions() as $oObj) {
+
+                    if (!($oObj->from)) {
+                        continue;
+                    }
+
+                    //var_dump($oObj);
+                    //exit;
+                    ?>
+
+                    <li class='has-sub'><a
+                                href='javascript:;'><span><strong><?php echo date("d-m-Y", strtotime($oObj->from)) ?></strong> - &euro; <strong><?php echo number_format($oObj->sellprice, 2, ",", ".") ?></strong> <?php echo trim($oObj->description) ? " (" . $oObj->description . ")" : "" ?></span></a>
+                        <ul>
+                            <?php
+                            $bFirstOption = false;
+                            $totalcounter = count($oObj->options);
+                            $counter = 0;
+                            foreach ($oObj->options as $oOption) {
+                                $counter++;
+
+                                $fromdatetime = strtotime($oOption->from) > 0 ? date("H:i", strtotime($oOption->from)) : "";
+                                $todatetime = strtotime($oOption->to) > 0 ? date("H:i", strtotime($oOption->to)) : "";
+
+                                $datetime = "";
+                                if (trim($fromdatetime) && trim($todatetime) && $todatetime != "00:00") {
+                                    $datetime = $fromdatetime . " - " . $todatetime . " uur";
+                                }
+
+                                $imgcode = "";
+                                if ($oOption->codes[0]) {
+                                    $imgcode = $oOption->codes[0];
+                                }
+
+                                $filepath = BASE_DOMAIN . "/Montapacking/images/" . $imgcode . ".png";
+                                if (!file_exists($filepath)) {
+                                    // $filepath = "";
+                                }
+
+                                $checked = "";
+
+                                if (false === $firstoption_found && strtotime(date("d-m-Y", strtotime($oObj->from))) > strtotime(date("d-m-Y"))) {
+                                    $firstoption_found = true;
+                                    $checked = "checked='checked'";
+                                }
+                                ?>
+
+
+                                <li <?php echo $counter == $totalcounter ? "class='last'" : "" ?>>
+
+
+                                    <label class="customradiobutton">
+
+                                        <span class="cropped_name hidden"><?php echo $oOption->description ?></span>
+                                        <span class="cropped_date hidden"><?php echo date("d-m-Y", strtotime($oObj->from)) ?></span>
+                                        <span class="cropped_time hidden"><?php echo $datetime ?></span>
+                                        <span class="cropped_image hidden"><img src="<?php echo $filepath ?>"></span>
+                                        <span class="cropped_price hidden"><?php echo $oOption->price ?></span>
+                                        <span class="cropped_code hidden"><?php echo $oOption->code ?></span>
+
+
+                                        <?php if (trim($filepath)) { ?>
+                                            <img src="<?php echo $filepath ?>">
+                                        <?php } ?>
+
+                                        <span style="line-height:25px;"><?php echo $oOption->description ?> <strong><?php echo $datetime ?></strong></span>
+
+                                        <span class="price" style="float:right; text-align:right; line-height:25px;">&euro; <?php echo number_format($oOption->price, 2, ",", ".") ?></span>
+
+                                        <input <?php echo $checked ?> class="selected_deliverytime" type="radio" name="montapacking[shipment][shipper]" id="<?php echo $oOption->code ?>" value="<?php echo $oOption->code ?>">
+                                        <span class="checkmark"></span>
+                                    </label>
+
+
+                                </li>
+                            <?php } ?>
+
+                        </ul>
+                    </li>
+
+                    <?php
+                }
+                ?>
+
+            </ul>
+        </div>
+
+        <div class="marginbottom" id="extraoptionscontainer" style="display:none">
+
+            <h3>Extra opties</h3>
+
+            <?php
+            foreach ($oItem->refreshShippingOptions() as $oObj) {
+                foreach ($oObj->options as $oOption) {
+
+                    if ($oOption->extras) {
+
+                        foreach ($oOption->extras as $oExtra) {
+
+                            ?>
+
+                            <div class="extra-options <?php echo $oOption->code ?>">
+                                <label class="customradiobutton">
+                                    <span class="cropped_subprice hidden"><?php echo $oExtra->price ?></span>
+                                    <?php echo $oExtra->name ?>   <span class="price"><?php echo number_format($oExtra->price, 2, ",", ".") ?></span>
+                                    <input class="<?php echo $oOption->code ?> extraoption" type="checkbox" name="montapacking[shipment][extras][<?php echo $oOption->code ?>][<?php echo $oExtra->code ?>]" value="<?php echo $oExtra->code ?>" id="<?php echo $oOption->code ?><?php echo $oExtra->code ?>">
+                                    <span class="checkmark"></span>
+                                </label>
+                            </div>
+
+
+                            <?php
+                        }
+                    }
+
+                }
+            }
+            ?>
+        </div>
+
+    </div>
+
+    <div id="pickupblock" class="marginbottom">
+
+        <div class="monta-locations">
+
+            <h3>Ophaalpunten</h3>
+
+            <div class="marginbottom">
+
+                <ul id="initialPickupsList">
+                    <?php
+                    $counter = -1;
+                    foreach ($oItem->getPickupOptions() as $oOption) {
+                        $counter++;
+                        if ($counter > 3) {
+                            //break;
+                        }
+                        $option = $oOption->options[0];
+
+                        $disabled = "";
+                        $checked = "checked='checked'";
+                        if ($counter > 0) {
+                            $disabled = "disabled='disabled'";
+                            $checked = "";
+                        }
+
+                        $openingtimes = json_decode($oOption->details->openingtimes, true);
+                        $a = array();
+                        foreach ($openingtimes as $arr) {
+                            $a[] = $arr['from'] . " - " . $arr['to'] . " uur";
+                        }
+                        $openingtimes = implode(" / ", $a);
+
+                        ?>
+                        <li data-markerid="<?php echo $counter ?>" <?php echo $counter > 3 ? "class='hidden'" : "" ?>>
+                            <input <?php echo $disabled ?> class="hidden pickuplistid" type="text" name="montapacking[pickup][listid]" value="<?php echo $counter ?>">
+                            <input <?php echo $disabled ?> class="hidden pickupcode" type="text" name="montapacking[pickup][code]" value="<?php echo $option->code ?>">
+                            <input <?php echo $disabled ?> class="hidden pickupcategory" type="text" name="montapacking[pickup][category]" value="<?php echo explode("_", $option->code)[0] ?>">
+                            <input <?php echo $disabled ?> class="hidden pickupdescription" type="text" name="montapacking[pickup][shipper]" value="<?php echo $option->description ?>">
+                            <input <?php echo $disabled ?> class="hidden pickupshippingoptions" type="text" name="montapacking[pickup][shippingOptions]" value="<?php echo $option->optionsWithValue->ServicePointCode ?>">
+                            <input <?php echo $disabled ?> class="hidden pickupname" type="text" name="montapacking[pickup][company]" value="<?php echo $oOption->details->name ?>">
+                            <input <?php echo $disabled ?> class="hidden pickupstreet" type="text" name="montapacking[pickup][street]" value="<?php echo $oOption->details->street ?>">
+                            <input <?php echo $disabled ?> class="hidden pickuphousenumber" type="text" name="montapacking[pickup][houseNumber]" value="<?php echo $oOption->details->houseNumber ?>">
+                            <input <?php echo $disabled ?> class="hidden pickupzipcode" type="text" name="montapacking[pickup][postal]" value="<?php echo $oOption->details->zipcode ?>">
+                            <input <?php echo $disabled ?> class="hidden pickupplace" type="text" name="montapacking[pickup][city]" value="<?php echo $oOption->details->place ?>">
+                            <input <?php echo $disabled ?> class="hidden pickupcountry" type="text" name="montapacking[pickup][country]" value="<?php echo $oOption->details->country ?>">
+                            <input <?php echo $disabled ?> class="hidden pickupprice" type="text" name="montapacking[pickup][price]" value="<?php echo $option->price ?>">
+                            <input <?php echo $disabled ?> class="hidden pickuppriceformatted" type="text" name="montapacking[pickup][priceformatted]" value="<?php echo number_format($oOption->options[0]->price, 2, ",", ".") ?>">
+                            <input <?php echo $disabled ?> class="hidden pickuplat" type="text" name="montapacking[pickup][lat]" value="<?php echo $oOption->details->lat ?>">
+                            <input <?php echo $disabled ?> class="hidden pickuplng" type="text" name="montapacking[pickup][lng]" value="<?php echo $oOption->details->lng ?>">
+                            <input <?php echo $disabled ?> class="hidden pickupimage" type="text" name="montapacking[pickup][image]" value="<?php echo BASE_DOMAIN ?>/Montapacking/images/<?php echo explode("_", $option->code)[0] ?>.png">
+                            <input <?php echo $disabled ?> class="hidden pickupopeningtimes" type="text" name="montapacking[pickup][openingtimes]" value="<?php echo $openingtimes ?>">
+
+
+                            <label class="customradiobutton">
+                                <span class="cropped_price hidden"><?php echo $oOption->options[0]->price ?></span>
+
+                                <div class="pickuppoints">
+
+                                    <div class="list-label">
+                                        <img src="<?php echo BASE_DOMAIN ?>/Montapacking/images/<?php echo explode("_", $option->code)[0] ?>.png" width="30">
+                                    </div>
+
+                                    <div class="list-details">
+
+                                        <strong class="loc-name"><?php echo $oOption->details->name ?></strong><br>
+
+                                        <i><?php echo $option->description ?></i>
+                                        <br>
+                                        <?php echo $oOption->details->street ?> <?php echo $oOption->details->houseNumber ?>
+                                        <br>
+                                        <?php echo $oOption->details->zipcode ?> <?php echo $oOption->details->place ?>
+                                        <br>
+                                        <?php echo $openingtimes ?>
+                                    </div>
+
+                                    <div class="list-price">
+                                        &euro; <?php echo number_format($oOption->options[0]->price, 2, ",", ".") ?>
+                                    </div>
+
+                                    <div style="clear:both"></div>
+                                </div>
+
+                                <input <?php echo $checked ?> id="pickupcounter<?php echo $counter ?>" name="initialPickupPointRadio" class="initialPickupRadio" type="radio" value="<?php echo $counter ?>">
+
+                                <span class="checkmark"></span>
+                            </label>
+
+                        </li>
+                    <?php } ?>
+                </ul>
+
+            </div>
+
+            <a href="javascript:;" onclick="Actions.loadPopUp('/Montapacking/includes/locator.php')">Klik hier om een
+                ander ophaalpunt te kiezen</a>
+
+        </div>
+
+
+        <h3>Geselecteerd ophaalpunt</h3>
+        <div class="monta-pickup-selected"></div>
+
+
+    </div>
+
+    <div id="sendcostsblock" class="marginbottom">
+        <h3>Totale verzendkosten</h3>
+        <div class="monta-pickup-costs"></div>
+    </div>
+
+</div>
+
+

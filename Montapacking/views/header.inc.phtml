@@ -1,0 +1,52 @@
+<link rel="stylesheet" href="/Montapacking/css/styles.checkbox.css">
+<link rel="stylesheet" href="/Montapacking/css/styles.css">
+<link rel="stylesheet" href="/Montapacking/css/styles.custom.css">
+<link rel="stylesheet" href="/Montapacking/css/cssmenu.css">
+<script>
+    function triggerMontapacking() {
+        var loaderhtml = "<div style='width:100%; text-align:center'><img src='/Montapacking/images/loader.gif'></div>";
+
+        $("#montapacking-content").html(loaderhtml);
+
+        var params = "";
+        params += "&addressdata[street]=" + $("#street").val();
+        params += "&addressdata[postalcode]=" + $("#postalcode").val();
+        params += "&addressdata[city]=" + $("#city").val();
+
+        if ($("#street").val().trim() && $("#postalcode").val().trim()) {
+            $.get("/Montapacking/includes/checkout.php?1=1" + params, function (data, status) {
+                $("#montapacking-content").html(data);
+            });
+        } else {
+            $("#montapacking-content").html("");
+        }
+    }
+
+    $(document).ready(function () {
+
+        $("#street, #postalcode, #city").on("change", function () {
+            triggerMontapacking();
+        });
+        triggerMontapacking();
+    });
+</script>
+
+<div class="marginbottom">
+
+    <h3>Verzending</h3>
+
+    <label class="customradiobutton"><strong>Laten bezorgen</strong> thuis of op een ander adres
+        <input checked type="radio" name="montapacking[shipment][type]" value="delivery" id="deliveryMethodAddress" class="deliveryMethod">
+        <span class="checkmark"></span>
+    </label>
+
+    <label class="customradiobutton"><strong>Ophalen</strong> bij een afhaalpunt bij jou in de buurt
+        <input type="radio" name="montapacking[shipment][type]" value="pickup" id="deliveryMethodPickupPoint" class="deliveryMethod">
+        <span class="checkmark"></span>
+    </label>
+
+</div>
+
+<div id="montapacking-content">
+
+</div>

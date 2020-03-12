@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+
+    <?php foreach ($this->getStylesheetPaths() as $sCssSheetPath) { ?>
+        <link rel="stylesheet" href="<?= $sCssSheetPath ?>" type="text/css"/>
+    <? } ?>
+
+    <?php foreach ($this->getJavaScriptPaths() as $sJavaScriptPath) { ?>
+        <script type="text/javascript" language="javascript" src="<?= $sJavaScriptPath ?>"></script>
+    <? } ?>
+</head>
+
+<body>
+
+
+<div class="container">
+    <div class="bh-sl-container">
+
+        <div id="bh-sl-map-container" class="bh-sl-map-container">
+            <div id="bh-sl-map" class="bh-sl-map"></div>
+            <div class="bh-sl-loc-list">
+                <ul class="list"></ul>
+            </div>
+        </div>
+
+        <div class="bh-sl-filters-container">
+            <button onclick="scCore.closePopup() " class="select-item" style="display:none">Gebruik selectie</button>
+            <ul id="category-filters" class="bh-sl-filters"></ul>
+        </div>
+    </div>
+
+</div>
+
+
+<script>
+    $(function () {
+        var site_url = '<?php echo BASE_DOMAIN?>';
+        var markers = [];
+
+        $("#initialPickupsList li").each(function (index) {
+
+            markers.push({
+
+                'id': $(this).attr("data-markerid"),
+                'listid': $(this).find("input.pickuplistid").val(),
+                'code': $(this).find("input.pickupcode").val(),
+                'shippingOptions': 1,
+                'category': $(this).find("input.pickupcategory").val(),
+                'name': $(this).find("input.pickupname").val(),
+                'lat': $(this).find("input.pickuplat").val(),
+                'lng': $(this).find("input.pickuplng").val(),
+                'street': $(this).find("input.pickupstreet").val(),
+                'houseNumber': $(this).find("input.pickuphousenumber").val(),
+                'city': $(this).find("input.pickupplace").val(),
+                'postal': $(this).find("input.pickupzipcode").val(),
+                'country': $(this).find("input.pickupcountry").val(),
+                'description': $(this).find("input.pickupdescription").val(),
+                'image': $(this).find("input.pickupimage").val(),
+                'openingtimes': $(this).find("input.pickupopeningtimes").val(),
+                'price': $(this).find("input.pickupprice").val(),
+                'priceformatted': $(this).find("input.pickuppriceformatted").val(),
+                'raw': 1,
+            });
+
+
+            if ($('.cat-' + $(this).find("input.pickupcategory").val() + '').length === 0) {
+                var html = '<li class="cat-' + $(this).find("input.pickupcategory").val() + '"><label><input checked="checked" type="checkbox" name="category" value="' + $(this).find("input.pickupcategory").val() + '"> ' + $(this).find("input.pickupdescription").val() + '</label></li>';
+                $('#category-filters').append(html);
+            }
+
+        });
+
+        var config = {
+            //'debug': true,
+            'pagination': false,
+            'infowindowTemplatePath': site_url + '/Montapacking/views/Storelocator/inc.infowindow.phtml',
+            'listTemplatePath': site_url + '/Montapacking/views/Storelocator/inc.list.phtml',
+            'distanceAlert': -1,
+            'dataType': "json",
+            'dataRaw': JSON.stringify(markers, null, 2),
+            'slideMap': false,
+            'inlineDirections': true,
+            'originMarker': true,
+            'dragSearch': false,
+            'defaultLoc': true,
+            'defaultLat': $("#current_latitude").val(),
+            'defaultLng': $("#current_longitude").val(),
+            'lengthUnit': 'km',
+            'exclusiveFiltering': true,
+            'taxonomyFilters': {
+                'category': 'category-filters',
+            },
+            catMarkers: {
+                'PAK': [site_url + '/Montapacking/images/PostNL.png', 32, 32],
+                'DHLservicepunt': [site_url + '/Montapacking/images/DHLservicepunt.png', 32, 32],
+                'DPDparcelstore': [site_url + '/Montapacking/images/DPD.png', 32, 32]
+            },
+
+            callbackMarkerClick: function (marker, markerId, $selectedLocation, location) {
+                $(".bh-sl-container .bh-sl-filters-container .select-item").css("display", "block");
+                $("#initialPickupsList li[data-markerid=" + location.listid + "]").find(".initialPickupRadio").trigger("click");
+            },
+            callbackListClick: function (markerId, selectedMarker, location) {
+                $(".bh-sl-container .bh-sl-filters-container .select-item").css("display", "block");
+                $("#initialPickupsList li[data-markerid=" + location.listid + "]").find(".initialPickupRadio").trigger("click");
+            },
+            callbackNotify: function (notifyText) {
+
+            },
+
+
+        };
+
+        $(document).ready(function () {
+            $('#bh-sl-map-container').storeLocator(config);
+        });
+
+    });
+</script>
+
+</body>
+</html>
